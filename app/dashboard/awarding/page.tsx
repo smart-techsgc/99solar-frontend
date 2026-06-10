@@ -43,6 +43,18 @@ interface AwardedBid {
   customerCode?: string;
 }
 
+type ExportRow = {
+  'Listing ID': string;
+  'OEM': string;
+  'SKU': string;
+  'Description': string;
+  'Disposition': string;
+  'Quantity': number;
+  'Unit Awarded Price ($)': number | null;
+  'Total Awarded Price ($)': number;
+  'Sales Customer': string;
+};
+
 export default function Awarding() {
   const [files, setFiles] = useState<File[]>([]);
   const [processing, setProcessing] = useState(false);
@@ -188,13 +200,11 @@ export default function Awarding() {
     try {
       Object.entries(sourceFileReports).forEach(([sourceFile, data]) => {
         let totalQty = 0;
-        let totalUnitPrice = 0;
         let totalAmount = 0;
 
-        const formattedData = data.map(item => {
+        const formattedData: ExportRow[] = data.map(item => {
           const lineTotal = (item.quantity || 0) * (item.unitAwardedPrice || 0);
           totalQty += item.quantity || 0;
-          totalUnitPrice += item.unitAwardedPrice || 0;
           totalAmount += lineTotal;
 
           return {
@@ -206,7 +216,6 @@ export default function Awarding() {
             'Quantity': item.quantity,
             'Unit Awarded Price ($)': item.unitAwardedPrice,
             'Total Awarded Price ($)': lineTotal,
-            // 'Code': item.customerCode || 'N/A', // Removed as requested
             'Sales Customer': sourceFile,
           };
         });
@@ -219,11 +228,10 @@ export default function Awarding() {
           'Description': '',
           'Disposition': '',
           'Quantity': totalQty,
-          'Unit Awarded Price ($)': null, // Total for column G removed as requested
+          'Unit Awarded Price ($)': null,
           'Total Awarded Price ($)': totalAmount,
-          // 'Code': '',
           'Sales Customer': '',
-        } as any);
+        });
 
         const { blob, fileName } = generateXLSX(formattedData, sourceFile, historyDate);
         saveAs(blob, fileName);
@@ -246,7 +254,7 @@ export default function Awarding() {
     try {
       let totalQty = 0;
       let totalAmount = 0;
-      const allData: any[] = [];
+      const allData: ExportRow[] = [];
 
       Object.entries(sourceFileReports).forEach(([sourceFile, data]) => {
         // Skip 'Internal' source file for All Wins report

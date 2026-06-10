@@ -60,7 +60,7 @@ export function Sidebar() {
     if (isMobile) {
       setIsOpen(false);
     }
-  }, [pathname]);
+  }, [pathname, isMobile]);
 
   const toggleSidebar = () => setIsOpen(!isOpen);
 
