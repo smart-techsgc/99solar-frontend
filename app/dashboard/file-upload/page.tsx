@@ -64,6 +64,8 @@ export default function FileManagementPage() {
 
     const formData = new FormData();
     files.forEach(file => formData.append('files', file));
+    const userId = localStorage.getItem('userId');
+    if (userId) formData.append('userId', userId);
 
     try {
       const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/files/upload`, formData, {
@@ -105,9 +107,15 @@ export default function FileManagementPage() {
       }
     } catch (error) {
       console.error('Error uploading files:', error);
+      const axiosError = error as { response?: { data?: { error?: string; details?: { filename?: string; error: string }[] } } };
+      const details = axiosError.response?.data?.details;
+      const message = details?.length
+        ? details.map((d) => `${d.filename ?? 'File'}: ${d.error}`).join('; ')
+        : axiosError.response?.data?.error ?? 'An error occurred while processing your files';
+      if (details?.length) setErrors(details);
       toast({
         title: 'Processing failed',
-        description: 'An error occurred while processing your files',
+        description: message,
         variant: 'destructive',
       });
     } finally {
