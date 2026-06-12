@@ -112,7 +112,12 @@ export default function FileManagementPage() {
       const message = details?.length
         ? details.map((d) => `${d.filename ?? 'File'}: ${d.error}`).join('; ')
         : axiosError.response?.data?.error ?? 'An error occurred while processing your files';
-      if (details?.length) setErrors(details);
+      if (details?.length) {
+        setErrors(details.map((d) => ({
+          filename: d.filename ?? 'Unknown file',
+          error: d.error,
+        })));
+      }
       toast({
         title: 'Processing failed',
         description: message,
