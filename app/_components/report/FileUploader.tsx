@@ -1,5 +1,5 @@
 import { ChangeEvent } from 'react';
-import { Button, CircularProgress } from '@mui/material';
+import { Button, CircularProgress, TextField } from '@mui/material';
 import PublishIcon from '@mui/icons-material/Publish';
 import DescriptionIcon from '@mui/icons-material/Description';
 
@@ -9,8 +9,12 @@ interface FileUploaderProps {
   onFileChange: (e: ChangeEvent<HTMLInputElement>) => void;
   onClearFiles: () => void;
   onProcessFiles: () => void;
+  fileCommissions?: Record<string, string>;
+  onCommissionChange?: (fileName: string, value: string) => void;
   accept?: string;
 }
+
+const isDecimalInput = (value: string) => value === '' || /^\d*\.?\d*$/.test(value);
 
 export const FileUploader = ({
   files,
@@ -18,6 +22,8 @@ export const FileUploader = ({
   onFileChange,
   onClearFiles,
   onProcessFiles,
+  fileCommissions,
+  onCommissionChange,
 }: FileUploaderProps) => (
   <div>
     <div className="mb-6">
@@ -32,7 +38,9 @@ export const FileUploader = ({
               <span className="font-semibold">Click to upload</span> or drag and drop
             </p>
             <p className="text-xs text-gray-500">
-              files upload (multiple allowed)
+              {fileCommissions && onCommissionChange
+                ? 'Upload one file per company, then set how much to deduct for each'
+                : 'files upload (multiple allowed)'}
             </p>
           </div>
           <input 
@@ -49,12 +57,27 @@ export const FileUploader = ({
     {files.length > 0 && (
       <div className="mt-4">
         <h3 className="font-medium text-gray-700 mb-2">Selected Files:</h3>
-        <div className="max-h-40 overflow-y-auto border rounded-lg p-2 bg-gray-50">
+        <div className="max-h-64 overflow-y-auto border rounded-lg p-2 bg-gray-50">
           {files.map((file, index) => (
-            <div key={index} className="flex items-center py-2 border-b last:border-b-0">
-              <DescriptionIcon className="text-gray-500 mr-2" />
-              <span className="text-sm truncate">{file.name}</span>
-              <span className="text-xs text-gray-500 ml-auto">
+            <div key={`${file.name}-${index}`} className="flex items-center gap-3 py-2 border-b last:border-b-0">
+              <DescriptionIcon className="text-gray-500 flex-shrink-0" />
+              <span className="text-sm truncate flex-1 min-w-0">{file.name}</span>
+              {fileCommissions && onCommissionChange && (
+                <TextField
+                  label="Deduct ($)"
+                  size="small"
+                  value={fileCommissions[file.name] ?? ''}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    if (!isDecimalInput(raw)) return;
+                    onCommissionChange(file.name, raw);
+                  }}
+                  disabled={processing}
+                  sx={{ width: 140 }}
+                  inputProps={{ inputMode: 'decimal' }}
+                />
+              )}
+              <span className="text-xs text-gray-500 w-16 text-right">
                 {(file.size / 1024).toFixed(1)} KB
               </span>
             </div>

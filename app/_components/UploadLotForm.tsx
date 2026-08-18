@@ -143,6 +143,7 @@ export default function UploadLotForm({ setLots }: UploadLotFormProps) {
             name="commissionRate"
             label="Commission Rate (%)"
             type="number"
+            inputProps={{ step: '0.01', min: '0' }}
             value={lotData.commissionRate}
             onChange={handleChange}
             fullWidth

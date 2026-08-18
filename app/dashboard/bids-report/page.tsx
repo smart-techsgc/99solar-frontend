@@ -24,7 +24,19 @@ export default function BidReportGenerator() {
   const [historyDate, setHistoryDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [savedReports, setSavedReports] = useState<SavedReport[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
-  const [commissionAmount, setCommissionAmount] = useState(4);
+  const [fileCommissions, setFileCommissions] = useState<Record<string, string>>({});
+
+  const parseCommission = (value?: string) => {
+    const parsed = parseFloat(value ?? '');
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const getCommissionForFile = (fileName: string) => parseCommission(fileCommissions[fileName]);
+
+  const handleCommissionChange = (fileName: string, value: string) => {
+    setFileCommissions((prev) => ({ ...prev, [fileName]: value }));
+    setCommissionApplied(false);
+  };
 
   const showSnackbar = (message: string, severity: 'success' | 'error' | 'warning' | 'info') =>
     setSnackbar({ open: true, message, severity });
@@ -35,6 +47,13 @@ export default function BidReportGenerator() {
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
       setFiles((prev) => [...prev, ...newFiles]);
+      setFileCommissions((prev) => {
+        const next = { ...prev };
+        newFiles.forEach((file) => {
+          if (next[file.name] == null) next[file.name] = '4';
+        });
+        return next;
+      });
       setCommissionApplied(false);
     }
   };
@@ -87,15 +106,25 @@ export default function BidReportGenerator() {
   // ✅ Apply Commission
   const handleApplyCommission = useCallback(() => {
     setResults((prevResults) =>
-      prevResults.map((item) => ({
-        ...item,
-        unitPrice: applyCommission(item.originalUnitPrice ?? 0, commissionAmount),
-        commissionAmount,
-      }))
+      prevResults.map((item) => {
+        const commissionAmount = getCommissionForFile(item.fileName);
+        return {
+          ...item,
+          unitPrice: applyCommission(item.originalUnitPrice ?? 0, commissionAmount),
+          commissionAmount,
+        };
+      })
     );
     setCommissionApplied(true);
-    showSnackbar(`Commission of $${commissionAmount} applied to all bids`, 'success');
-  }, [commissionAmount]);
+    const summary = Object.entries(fileCommissions)
+      .filter(([name]) => results.some((item) => item.fileName === name))
+      .map(([name, amount]) => `${name}: $${parseCommission(amount).toFixed(2)}`)
+      .join(', ');
+    showSnackbar(
+      summary ? `Commission applied (${summary})` : 'Commission applied',
+      'success'
+    );
+  }, [fileCommissions, results]);
 
   // ✅ Process uploaded files
   const processFiles = async () => {
@@ -164,7 +193,7 @@ export default function BidReportGenerator() {
         Quantity: item.quantity,             // F
         Unit_Offer_Price:                    // G
           commissionApplied && item.originalUnitPrice != null
-            ? applyCommission(item.originalUnitPrice, commissionAmount)
+            ? applyCommission(item.originalUnitPrice, item.commissionAmount ?? getCommissionForFile(item.fileName))
             : item.originalUnitPrice,
         Code: item.customerCode || 'N/A',   // H
         'Sales Customer': item.fileName || 'N/A', // I
@@ -244,8 +273,14 @@ export default function BidReportGenerator() {
           files={files}
           processing={processing}
           onFileChange={handleFileChange}
-          onClearFiles={() => setFiles([])}
+          onClearFiles={() => {
+            setFiles([]);
+            setFileCommissions({});
+            setCommissionApplied(false);
+          }}
           onProcessFiles={processFiles}
+          fileCommissions={fileCommissions}
+          onCommissionChange={handleCommissionChange}
         />
       </Card>
 
@@ -253,10 +288,11 @@ export default function BidReportGenerator() {
         <ResultsPreview
           results={results}
           commissionApplied={commissionApplied}
-          commissionAmount={commissionAmount}
-          setCommissionAmount={setCommissionAmount}
+          fileCommissions={fileCommissions}
+          onCommissionChange={handleCommissionChange}
+          getCommissionForFile={getCommissionForFile}
           onApplyCommission={handleApplyCommission}
-          onSaveReport={saveReport} // ✅ Hooked up here
+          onSaveReport={saveReport}
           onGenerateReport={generateReport}
           processing={processing}
         />
@@ -268,7 +304,18 @@ export default function BidReportGenerator() {
         loadingHistory={loadingHistory}
         onDateChange={setHistoryDate}
         onRefresh={loadReportsFromBackend}
-        onLoadReport={(report) => setResults(report.report_data)}
+        onLoadReport={(report) => {
+          setResults(report.report_data);
+          setFileCommissions((prev) => {
+            const next = { ...prev };
+            report.report_data.forEach((item) => {
+              if (item.fileName && next[item.fileName] == null) {
+                next[item.fileName] = String(item.commissionAmount ?? 4);
+              }
+            });
+            return next;
+          });
+        }}
         onDelete={async (id) => {
           try {
             const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';

@@ -110,6 +110,7 @@ export default function EditLotDialog({
           <TextField
             label="Commission Rate"
             type="number"
+            inputProps={{ step: '0.01', min: '0' }}
             value={form.commission_rate}
             onChange={(e) => setForm({...form, commission_rate: e.target.value})}
             fullWidth
