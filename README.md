@@ -1,4 +1,4 @@
-# 99solar Frontend
+# 99solar Frontendd
 
 A modern Next.js application for manage solar auctions and bidder participation.
 
