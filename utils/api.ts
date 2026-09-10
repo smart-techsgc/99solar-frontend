@@ -1,3 +1,5 @@
+import { toLocalDateString } from '@/utils/date';
+
 export async function fetchTotalRevenue(): Promise<number> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
   const response = await fetch(`${apiUrl}/api/reports/revenue`);
@@ -15,14 +17,17 @@ export async function fetchReportsByDate(date: string) {
 
 export async function fetchDashboardStats() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+  const today = toLocalDateString();
   const [revenueRes, reportsRes] = await Promise.all([
     fetch(`${apiUrl}/api/reports/revenue`),
-    fetch(`${apiUrl}/api/reports?date=${new Date().toISOString().split('T')[0]}`),
+    fetch(`${apiUrl}/api/reports?date=${today}`),
   ]);
   if (!revenueRes.ok || !reportsRes.ok) throw new Error("Failed to fetch stats");
   const revenueData = await revenueRes.json();
   const reports = await reportsRes.json();
-  const allBids = reports.flatMap((r: any) => Array.isArray(r.report_data) ? r.report_data : []);
+  const allBids = reports.flatMap((r: { report_data?: unknown }) =>
+    Array.isArray(r.report_data) ? r.report_data : []
+  );
   return {
     monthlyRevenue: revenueData.totalRevenue,
     totalBids: allBids.length,

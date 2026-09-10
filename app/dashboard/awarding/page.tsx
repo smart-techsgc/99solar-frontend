@@ -5,6 +5,7 @@ import { saveAs } from 'file-saver';
 import { Card, IconButton, CircularProgress } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { parseCSV, generateXLSX } from '@/utils/csvParser';
+import { toLocalDateString } from '@/utils/date';
 import { DateSelector } from '@/app/_components/awarding/DateSelector';
 import { FileUploader } from '@/app/_components/awarding/FileUploader';
 import { ReportPreview } from '@/app/_components/awarding/ReportPreview';
@@ -63,7 +64,7 @@ export default function Awarding() {
     message: '',
     severity: 'success' as 'success' | 'error' | 'warning' | 'info',
   });
-  const [historyDate, setHistoryDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [historyDate, setHistoryDate] = useState<string>(toLocalDateString());
   const [savedReports, setSavedReports] = useState<SavedReport[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [sourceFileReports, setSourceFileReports] = useState<Record<string, AwardedBid[]>>({});

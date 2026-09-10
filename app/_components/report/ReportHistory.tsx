@@ -4,6 +4,7 @@ import { Button, CircularProgress, TextField, IconButton, Tooltip } from '@mui/m
 import HistoryIcon from '@mui/icons-material/History';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { BidData } from '@/types/types';
+import { formatReportDate } from '@/utils/date';
 
 export interface SavedReport {
   id: number;
@@ -90,10 +91,10 @@ export const ReportHistory = ({
                     {new Date(report.created_at).toLocaleString()}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-500">
-                    {new Date(report.report_date).toLocaleDateString()}
+                    {formatReportDate(report.report_date)}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-500">
-                    {report.report_data.length} bids
+                    {Array.isArray(report.report_data) ? report.report_data.length : 0} bids
                   </td>
                   <td className="px-4 py-3 text-sm flex items-center space-x-2">
                     <Button variant="outlined" size="small" onClick={() => onLoadReport(report)}>

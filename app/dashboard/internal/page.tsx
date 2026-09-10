@@ -31,7 +31,13 @@ export default function Awarding() {
     severity: 'success' as 'success' | 'error' | 'warning' | 'info',
   });
   const [historyDate, setHistoryDate] = useState<string>(
-    new Date().toISOString().split('T')[0]
+    (() => {
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const day = String(now.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    })()
   );
   const [sourceFileReports, setSourceFileReports] = useState<
     Record<string, AwardedBid[]>

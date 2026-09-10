@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import { Card } from '@mui/material';
 import { applyCommission } from '@/utils/commission';
+import { toLocalDateString } from '@/utils/date';
 import { BidData, SavedReport } from '@/types/types';
 import { FileUploader } from '@/app/_components/report/FileUploader';
 import { ResultsPreview } from '@/app/_components/report/ResultsPreview';
@@ -21,7 +22,7 @@ export default function BidReportGenerator() {
   });
   const [results, setResults] = useState<BidData[]>([]);
   const [commissionApplied, setCommissionApplied] = useState(false);
-  const [historyDate, setHistoryDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [historyDate, setHistoryDate] = useState<string>(toLocalDateString());
   const [savedReports, setSavedReports] = useState<SavedReport[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [fileCommissions, setFileCommissions] = useState<Record<string, string>>({});
@@ -228,7 +229,7 @@ export default function BidReportGenerator() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          report_date: new Date().toISOString(),
+          report_date: historyDate || toLocalDateString(),
           report_data: results,
         }),
       });
@@ -327,7 +328,11 @@ export default function BidReportGenerator() {
             showSnackbar('Failed to delete report', 'error');
           }
         }}
-        onLoadAll={(reports) => setResults(reports.flatMap((r) => r.report_data))}
+        onLoadAll={(reports) =>
+          setResults(
+            reports.flatMap((r) => (Array.isArray(r.report_data) ? r.report_data : []))
+          )
+        }
       />
 
       <SnackbarAlert
