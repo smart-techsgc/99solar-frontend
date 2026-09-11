@@ -83,12 +83,21 @@ export default function Awarding() {
   const loadSavedReports = useCallback(async () => {
     try {
       setLoadingHistory(true);
-      const response = await fetch(`${apiUrl}/api/reports/latest?date=${historyDate}`);
+      const response = await fetch(`${apiUrl}/api/reports/latest?date=${historyDate}&full=1`);
       if (!response.ok) throw new Error('Failed to load reports');
       const data: SavedReport[] = await response.json();
       setSavedReports(data);
-      showSnackbar(`Loaded ${data.length} report(s) for ${new Date(historyDate).toLocaleDateString()}`, 'success');
-    } catch (error) {
+      showSnackbar(`Loaded ${data.length} report(s) for ${historyDate}`, 'success');
+      const totalItems = data.reduce(
+        (sum, report) => sum + (Array.isArray(report.report_data) ? report.report_data.length : 0),
+        0
+      );
+      if (totalItems > 5000) {
+        showSnackbar(
+          `Loaded ${totalItems.toLocaleString()} bids — processing may take a moment`,
+          'info'
+        );
+      }    } catch (error) {
       console.error(error);
       showSnackbar('Error loading reports', 'error');
     } finally {

@@ -18,28 +18,23 @@ export async function fetchReportsByDate(date: string) {
 export async function fetchDashboardStats() {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
   const today = toLocalDateString();
-  const [revenueRes, reportsRes] = await Promise.all([
-    fetch(`${apiUrl}/api/reports/revenue`),
-    fetch(`${apiUrl}/api/reports?date=${today}`),
-  ]);
-  if (!revenueRes.ok || !reportsRes.ok) throw new Error("Failed to fetch stats");
-  const revenueData = await revenueRes.json();
-  const reports = await reportsRes.json();
-  const allBids = reports.flatMap((r: { report_data?: unknown }) =>
-    Array.isArray(r.report_data) ? r.report_data : []
-  );
+  const response = await fetch(`${apiUrl}/api/reports/dashboard-stats?date=${today}`);
+  if (!response.ok) throw new Error("Failed to fetch dashboard stats");
+  const data = await response.json();
   return {
-    monthlyRevenue: revenueData.totalRevenue,
-    totalBids: allBids.length,
+    monthlyRevenue: Number(data.totalRevenue || 0),
+    totalBids: Number(data.totalBidsToday || 0),
+    activeCustomers: Number(data.activeCustomers || 0),
+    highestBid: data.highestBid || { amount: 0, description: null, date: null },
   };
 }
 
-export async function fetchActiveCustomers(fileName: string): Promise<number> {
+export async function fetchActiveCustomers(_fileName?: string): Promise<number> {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
-  const response = await fetch(`${apiUrl}/api/reports/active-customers?fileName=${encodeURIComponent(fileName)}`);
+  const response = await fetch(`${apiUrl}/api/reports/active-customers`);
   if (!response.ok) throw new Error("Failed to fetch active customers");
   const data = await response.json();
-  return data.activeCustomers;
+  return Number(data.activeCustomers ?? data.customers?.length ?? 0);
 }
 
 export async function fetchHighestBid(): Promise<{ amount: number; description: string; date: string }> {

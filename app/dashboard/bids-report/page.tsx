@@ -305,17 +305,25 @@ export default function BidReportGenerator() {
         loadingHistory={loadingHistory}
         onDateChange={setHistoryDate}
         onRefresh={loadReportsFromBackend}
-        onLoadReport={(report) => {
-          setResults(report.report_data);
-          setFileCommissions((prev) => {
-            const next = { ...prev };
-            report.report_data.forEach((item) => {
-              if (item.fileName && next[item.fileName] == null) {
-                next[item.fileName] = String(item.commissionAmount ?? 4);
-              }
+        onLoadReport={async (report) => {
+          try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+            const res = await fetch(`${apiUrl}/api/reports/by-id/${report.id}`);
+            if (!res.ok) throw new Error('Failed to load report');
+            const fullReport = await res.json();
+            setResults(Array.isArray(fullReport.report_data) ? fullReport.report_data : []);
+            setFileCommissions((prev) => {
+              const next = { ...prev };
+              (fullReport.report_data || []).forEach((item: BidData) => {
+                if (item.fileName && next[item.fileName] == null) {
+                  next[item.fileName] = String(item.commissionAmount ?? 4);
+                }
+              });
+              return next;
             });
-            return next;
-          });
+          } catch {
+            showSnackbar('Failed to load report', 'error');
+          }
         }}
         onDelete={async (id) => {
           try {
@@ -328,11 +336,23 @@ export default function BidReportGenerator() {
             showSnackbar('Failed to delete report', 'error');
           }
         }}
-        onLoadAll={(reports) =>
-          setResults(
-            reports.flatMap((r) => (Array.isArray(r.report_data) ? r.report_data : []))
-          )
-        }
+        onLoadAll={async (reports) => {
+          try {
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+            const fullReports = await Promise.all(
+              reports.map(async (report) => {
+                const res = await fetch(`${apiUrl}/api/reports/by-id/${report.id}`);
+                if (!res.ok) throw new Error('Failed to load report');
+                return res.json();
+              })
+            );
+            setResults(
+              fullReports.flatMap((r) => (Array.isArray(r.report_data) ? r.report_data : []))
+            );
+          } catch {
+            showSnackbar('Failed to load reports', 'error');
+          }
+        }}
       />
 
       <SnackbarAlert

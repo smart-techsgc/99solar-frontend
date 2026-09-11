@@ -17,4 +17,5 @@ export interface SavedReport {
   report_date: string;
   report_data: BidData[];
   created_at: string;
+  item_count?: number;
 }

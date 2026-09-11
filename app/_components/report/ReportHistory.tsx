@@ -11,6 +11,7 @@ export interface SavedReport {
   created_at: string;
   report_date: string;
   report_data: BidData[];
+  item_count?: number;
 }
 
 interface ReportHistoryProps {
@@ -94,7 +95,12 @@ export const ReportHistory = ({
                     {formatReportDate(report.report_date)}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-500">
-                    {Array.isArray(report.report_data) ? report.report_data.length : 0} bids
+                    {typeof report.item_count === 'number'
+                      ? report.item_count
+                      : Array.isArray(report.report_data)
+                        ? report.report_data.length
+                        : 0}{' '}
+                    bids
                   </td>
                   <td className="px-4 py-3 text-sm flex items-center space-x-2">
                     <Button variant="outlined" size="small" onClick={() => onLoadReport(report)}>
